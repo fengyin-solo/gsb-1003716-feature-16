@@ -51,6 +51,7 @@
               :key="action"
               class="link"
               type="button"
+              :disabled="busyKey === `${row.id}:${action}`"
               @click="runAction(action, row)"
             >
               {{ action }}
@@ -65,6 +66,7 @@
 
     <footer class="page-foot">
       <span>共 {{ total }} 条遥测设备记录</span>
+      <span v-if="okMessage" class="ok-text">{{ okMessage }}</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
   </section>
@@ -90,14 +92,21 @@ const stats = [{"label": "设备总数", "value": 0}, {"label": "正常运行数
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const okMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const busyKey = ref('')
+
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+function busyIdOf(id: string | number, action: string): string {
+  return `${id}:${action}`
+}
 
 function resetFilters() {
   filters.value = {}
@@ -110,16 +119,29 @@ function exportRows() {
 
 function openCreate() {
   errorMessage.value = '遥测设备登记入口尚未接入审批流'
+  okMessage.value = ''
 }
 
-function runAction(action: string, row: EntryRow) {
+async function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
-  const result = applyAction(meta.key, Number(row.id), action)
-  if (!result.ok) {
-    errorMessage.value = result.message
-    return
+  okMessage.value = ''
+  busyKey.value = busyIdOf(row.id, action)
+  // 让禁用态先渲染：并发双击只放第一次确认过去，停用归档因此只会生成一次。
+  await new Promise((resolve) => window.setTimeout(resolve, 0))
+  try {
+    const result = applyAction(meta.key, Number(row.id), action)
+    if (!result.ok) {
+      errorMessage.value = result.message
+      return
+    }
+    okMessage.value =
+      action === meta.archiveOutAction
+        ? `${result.message}；已在站房维护生成一条归档事项`
+        : result.message
+    reload()
+  } finally {
+    busyKey.value = ''
   }
-  reload()
 }
 
 function reload() {

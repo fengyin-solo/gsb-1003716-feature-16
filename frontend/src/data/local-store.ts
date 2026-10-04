@@ -1,8 +1,9 @@
 import { SEED_ROWS } from './seed'
-import type { EntryRow } from './types'
+import type { ArchiveItem, EntryRow } from './types'
 
 // 本地持久化：数据放在 localStorage 里，刷新、关掉再打开都还在。
 const STORAGE_KEY = 'hydrology-monitor-station:entries'
+const ARCHIVE_KEY = 'hydrology-monitor-station:archives'
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
@@ -56,4 +57,36 @@ export function resetRows(key: string): EntryRow[] {
 
 export function storageKey(): string {
   return STORAGE_KEY
+}
+
+// 归档事项单独存放：被退回/停用的记录不再出现在原列表里，统一进归档。
+let archiveCache: ArchiveItem[] | null = null
+
+export function listArchives(): ArchiveItem[] {
+  if (archiveCache === null) {
+    archiveCache = readArchives()
+  }
+  return archiveCache
+}
+
+export function saveArchives(items: ArchiveItem[]): void {
+  archiveCache = items
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(ARCHIVE_KEY, JSON.stringify(items))
+  }
+}
+
+function readArchives(): ArchiveItem[] {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return []
+  }
+  const raw = window.localStorage.getItem(ARCHIVE_KEY)
+  if (!raw) {
+    return []
+  }
+  try {
+    return JSON.parse(raw) as ArchiveItem[]
+  } catch {
+    return []
+  }
 }
