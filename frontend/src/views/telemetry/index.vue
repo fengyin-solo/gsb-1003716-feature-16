@@ -66,6 +66,7 @@
     <footer class="page-foot">
       <span>共 {{ total }} 条遥测设备记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
+      <span v-else-if="successMessage" class="success-text">{{ successMessage }}</span>
     </footer>
   </section>
 </template>
@@ -90,6 +91,7 @@ const stats = [{"label": "设备总数", "value": 0}, {"label": "正常运行数
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const successMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
 const statusSummary = computed(() =>
@@ -114,16 +116,19 @@ function openCreate() {
 
 function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
+  successMessage.value = ''
   const result = applyAction(meta.key, Number(row.id), action)
   if (!result.ok) {
     errorMessage.value = result.message
     return
   }
+  successMessage.value = result.message
   reload()
 }
 
 function reload() {
   errorMessage.value = ''
+  successMessage.value = ''
   try {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items

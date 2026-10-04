@@ -19,6 +19,7 @@ const Stationhouse = () => import('@/views/stationhouse/index.vue')
 const Calibration = () => import('@/views/calibration/index.vue')
 const Inspection = () => import('@/views/inspection/index.vue')
 const Plan = () => import('@/views/plan/index.vue')
+const Archive = () => import('@/views/archive/index.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -42,6 +43,7 @@ const router = createRouter({
     { path: '/calibration', name: 'calibration', component: Calibration },
     { path: '/inspection', name: 'inspection', component: Inspection },
     { path: '/plan', name: 'plan', component: Plan },
+    { path: '/archive', name: 'archive', component: Archive },
   ],
 })
 
